@@ -1,4 +1,4 @@
-# aws-free-tier-stack
+# The AWS free tier stack
 Everything you need to get started safely on the AWS free tier
 
 The AWS Free Tier Stack is a CloudFormation stack that contains everything a new user of AWS needs to safely start using AWS. It contains tools and configuration that helps you in managing budgets and basic security configuration.
