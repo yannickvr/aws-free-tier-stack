@@ -1,6 +1,9 @@
 name: Upload Template to AWS
 on:
-  push
+  push:
+    branches: ['main']
+    paths:
+      - stack.yml
 env:
   BUCKET_NAME : "aws-free-tier-stack"
   AWS_REGION : "eu-west-1"
