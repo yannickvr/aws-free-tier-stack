@@ -1,0 +1,26 @@
+name: Upload Template to AWS
+on:
+  push
+env:
+  BUCKET_NAME : "aws-free-tier-stack"
+  AWS_REGION : "eu-west-1"
+# permission can be added at job level or workflow level
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+jobs:
+  S3PackageUpload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::008933808544:role/aws-free-tier-stack-backendrole
+          role-session-name: aws-free-tier-s3-upload
+          aws-region: ${{ env.AWS_REGION }}
+      # Upload a file to AWS s3
+      - name:  Copy index.html to s3
+        run: |
+          aws s3 cp ./stack.yml s3://${{ env.BUCKET_NAME }}/
