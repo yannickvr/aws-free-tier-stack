@@ -130,6 +130,12 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+  LambdaLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${LambdaFunction}"
+      RetentionInDays: 30
+
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -139,34 +145,52 @@ Resources:
         ZipFile: |
           import boto3
           import os
-          # import logging
-
-          # logger = logging.getLogger()
-          # logger.setLevel(logging.INFO)
 
           def lambda_handler(event, context):
+              # List to store messages
+              messages = []
+
+              access_keys_message = """Root user has access keys present!
+
+              Visit this URL to learn how to solve this: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user_manage_delete-key.html"""
+
+              mfa_message = """Root user does not have MFA configured!
+
+              Visit this URL to learn how to solve this: https://docs.aws.amazon.com/IAM/latest/UserGuide/enable-virt-mfa-for-root.html"""
+
               def send_sns_message(message):
-                  sns = boto3.client('sns')
-                  sns.publish(
-                      TopicArn=os.environ['SNSTopic'],
-                      Message=message
-                  )
+                  # Append the message to the list
+                  messages.append(message)
 
               def check_root():
                   iam = boto3.client('iam')
                   response = iam.get_account_summary()
                   if response['SummaryMap']['AccountMFAEnabled'] == 0:
                       print('Root user does not have MFA set!')
-                      send_sns_message('Root user does not have MFA set!')
+                      send_sns_message(mfa_message)
                   else:
                       print('Root user has MFA set!')
                   if response['SummaryMap']['AccountAccessKeysPresent'] > 0:
                       print('Root user has access keys present!')
-                      send_sns_message('Root user has access keys present!')
+                      send_sns_message(access_keys_message)
                   else:
                       print('Root user does not have access keys present!')
 
+              # Call the function to check root user
               check_root()
+
+              # If there are messages in the list, send a single message with all accumulated messages
+              if messages:
+                  # Create an SNS client
+                  sns = boto3.client('sns')
+                  # Join all messages into a single string separated by newlines
+                  message = '\n'.join(messages)
+                  # Send the message
+                  sns.publish(
+                      TopicArn=os.environ['SNSTopic'],
+                      Message=message,
+                      Subject='AWS Free Tier Stack Alert'
+                  )
 
       Runtime: python3.12
       Timeout: 30
@@ -179,7 +203,7 @@ Resources:
     Type: 'AWS::Events::Rule'
     Properties:
       Description: 'Run the lambda function every 24 hours'
-      ScheduleExpression: 'rate(24 hours)'
+      ScheduleExpression: 'cron(0 12 * * ? *)'
       State: 'ENABLED'
       Targets:
         - Arn: !GetAtt LambdaFunction.Arn
