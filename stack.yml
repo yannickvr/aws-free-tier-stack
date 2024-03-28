@@ -67,7 +67,7 @@ Resources:
             Resource: !Ref SNSTopic
             Condition:
               ArnLike:
-                'aws:SourceArn': !Sub 'arn:${AWS::Partition}:events::${AWS::AccountId}:*'
+                'aws:SourceArn': !GetAtt RootUserLoginEventRule.Arn
               StringEquals:
                 'aws:SourceAccount': !Ref 'AWS::AccountId'
           - Sid: AllowBudgetsToPublish
