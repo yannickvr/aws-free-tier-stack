@@ -8,7 +8,7 @@ All configuration done by this stack should easily fit in the free tier itself. 
 ## Installation
 
 - Log in to your AWS account
-- <a href="https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review?templateURL=https://aws-free-tier-stack.s3.eu-west-1.amazonaws.com/stack.yml&stackName=aws-free-tier-stack" target="_blank">Click this link to install the stack</a>
+- [Click this link *while pressing CTRL* to install the stack](https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review?templateURL=https://aws-free-tier-stack.s3.eu-west-1.amazonaws.com/stack.yml&stackName=aws-free-tier-stack)
 - Update the daily budget amount.
 - Update the email address(ses, comma separated)
 - Acknowledge the required access capabilities
