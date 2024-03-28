@@ -7,8 +7,10 @@ All configuration done by this stack should easily fit in the free tier itself. 
 
 ## Installation
 
+*note: this stack must be installed in the `us-east-1` region.
+
 - Log in to your AWS account
-- [Click this link *while pressing CTRL* to install the stack](https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review?templateURL=https://aws-free-tier-stack.s3.eu-west-1.amazonaws.com/stack.yml&stackName=aws-free-tier-stack)
+- [Click this link *while pressing CTRL* to install the stack](https://us-east-1.console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review?templateURL=https://aws-free-tier-stack.s3.eu-west-1.amazonaws.com/stack.yml&stackName=aws-free-tier-stack)
 - Update the daily budget amount.
 - Update the email address(ses, comma separated)
 - Acknowledge the required access capabilities
@@ -42,6 +44,9 @@ All configuration done by this stack should easily fit in the free tier itself. 
 
 - Q: Why are you using CloudFormation and not CDK, Terraform or something else?
   A: Because CloudFormation has the best new-user experience. Just click the link and follow the wizard. As this stack is created for new users, this is the best solution
+
+- Q: Why does the stack need to be deployed in US-EAST-1?
+  A: Some services, like IAM, only publish their events in US-EAST-1. As we want to monitor these services, we need to deploy resources in that region.
 
 - Q: I've got some ideas, can I help
   A: Yes! Feel free to open an issue or a PR

@@ -12,7 +12,20 @@ Parameters:
     Description: Daily Budget amount to receive alerts for
     Default: 1
 
+Conditions:
+  NotInUsEast1:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref 'AWS::Region'
+          - 'us-east-1'
+
 Resources:
+  #This will fail on purpose to check if this stack is being deployed in us-east-1
+  DeploymentFailDueToWrongRegion:
+    Type: 'AWS::CloudFormation::CustomResource'
+    Condition: NotInUsEast1
+    Properties: {}
+
   #An SNS Topic allows services to send notifications to a subscribed endpoint
   SNSTopic:
     Type: 'AWS::SNS::Topic'
@@ -216,4 +229,47 @@ Resources:
       FunctionName: !GetAtt LambdaFunction.Arn
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt EventRule.Arn
-  
+
+  CloudTrailBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub "${AWS::AccountId}-cloudtrail-bucket"
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldObjects
+            Status: Enabled
+            ExpirationInDays: 365
+
+  CloudTrailBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref CloudTrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:GetBucketAcl'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${CloudTrailBucket}'
+            Condition:
+              StringEquals:
+                'aws:SourceArn': !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${CloudTrailBucket}/*'
+            Condition:
+              StringEquals:
+                'aws:SourceArn': !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
+                's3:x-amz-acl': 'bucket-owner-full-control'
+
+  CloudTrail:
+    Type: 'AWS::CloudTrail::Trail'
+    Properties:
+      TrailName: CloudTrail
+      IsMultiRegionTrail: true
+      S3BucketName: !Ref CloudTrailBucket
+      IncludeGlobalServiceEvents: true
+      IsLogging: true
