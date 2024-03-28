@@ -7,13 +7,12 @@ All configuration done by this stack should easily fit in the free tier itself. 
 
 ## Installation
 
-- Download `stack.yml`
-- Log in to your AWS account, and open the CloudFormation service in your region (e.g. https://eu-west-1.console.aws.amazon.com/cloudformation)
-- Create Stack
-    - With new resources
-    - Upload a template file
-    - Select the downloaded template
-    - Follow the wizard.
+- Log in to your AWS account
+- [Click this link to install the stack](https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review?templateURL=https://aws-free-tier-stack.s3.eu-west-1.amazonaws.com/stack.yml&stackName=aws-free-tier-stack)
+- Update the daily budget amount.
+- Update the email address(ses, comma separated)
+- Acknowledge the required access capabilities
+- Press `Create Stack`
 - ***You will get an email on the email address(ses) entered. Make sure to accept the subscription, or alerts will not be sent!***
 
 ## Contents

@@ -21,6 +21,6 @@ jobs:
           role-session-name: aws-free-tier-s3-upload
           aws-region: ${{ env.AWS_REGION }}
       # Upload a file to AWS s3
-      - name:  Copy index.html to s3
+      - name:  Copy stack.yml to s3
         run: |
           aws s3 cp ./stack.yml s3://${{ env.BUCKET_NAME }}/
