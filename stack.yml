@@ -6,7 +6,7 @@ Parameters:
   Email:
     Type: CommaDelimitedList
     Description: Email addresses to receive budget alerts
-    Default: 'test1@yannickvr.nl,test2@yannickvr.nl'
+    Default: 'email@example.com'
   DailyBudgetAmount:
     Type: Number
     Description: Daily Budget amount to receive alerts for
