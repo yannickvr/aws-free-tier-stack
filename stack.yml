@@ -287,6 +287,7 @@ Resources:
                 's3:x-amz-acl': 'bucket-owner-full-control'
 
   CloudTrail:
+    DependsOn: CloudTrailBucketPolicy
     Type: 'AWS::CloudTrail::Trail'
     Properties:
       TrailName: CloudTrail
