@@ -2,14 +2,35 @@ Description: AWS Free Tier Stack helps you set up all the basics you need to saf
 Transform: 'AWS::LanguageExtensions'
 AWSTemplateFormatVersion: 2010-09-09
 
+
+Metadata:
+  Source:
+    Description: "https://github.com/yannickvr/aws-free-tier-stack"
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Email Configuration"
+        Parameters:
+          - Email
+      - Label:
+          default: "Budget Configuration"
+        Parameters:
+          - DailyBudgetAmount
+    ParameterLabels:
+      Email:
+        default: "Email addresses to receive budget alerts. Comma separated, e.g. 'one@example.com,two@example.com'"
+      DailyBudgetAmount:
+        default: "Daily Budget amount to receive alerts for, in dollars"
+
 Parameters:
   Email:
     Type: CommaDelimitedList
-    Description: Email addresses to receive budget alerts, comma separated
+    Description: "Email addresses:"
     Default: 'email@example.com'
   DailyBudgetAmount:
     Type: Number
-    Description: Daily Budget amount to receive alerts for
+    Description: "Daily Budget:"
     Default: 1
 
 Conditions:
