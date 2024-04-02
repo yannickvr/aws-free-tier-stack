@@ -1,7 +1,6 @@
 Description: AWS Free Tier Stack helps you set up all the basics you need to safely start using AWS. See https://github.com/yannickvr/aws-free-tier-stack for more information.
-Transform: 'AWS::LanguageExtensions'
+Transform: "AWS::LanguageExtensions"
 AWSTemplateFormatVersion: 2010-09-09
-
 
 Metadata:
   Source:
@@ -27,7 +26,7 @@ Parameters:
   Email:
     Type: CommaDelimitedList
     Description: "Email addresses:"
-    Default: 'email@example.com'
+    Default: "email@example.com"
   DailyBudgetAmount:
     Type: Number
     Description: "Daily Budget:"
@@ -37,19 +36,19 @@ Conditions:
   NotInUsEast1:
     Fn::Not:
       - Fn::Equals:
-          - !Ref 'AWS::Region'
-          - 'us-east-1'
+          - !Ref "AWS::Region"
+          - "us-east-1"
 
 Resources:
   #This will fail on purpose to check if this stack is being deployed in us-east-1
   DeploymentFailDueToWrongRegion:
-    Type: 'AWS::CloudFormation::CustomResource'
+    Type: "AWS::CloudFormation::CustomResource"
     Condition: NotInUsEast1
     Properties: {}
 
   #An SNS Topic allows services to send notifications to a subscribed endpoint
   SNSTopic:
-    Type: 'AWS::SNS::Topic'
+    Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: !Sub "${AWS::StackName}-topic"
 
@@ -60,22 +59,21 @@ Resources:
       Description: Events rule for monitoring root AWS Console Sign In activity
       EventPattern:
         detail-type:
-        - AWS Console Sign In via CloudTrail
+          - AWS Console Sign In via CloudTrail
         detail:
           userIdentity:
             type:
-            - Root
+              - Root
       Name:
         Fn::Sub: "${AWS::StackName}-RootActivityRule"
       State: ENABLED
       Targets:
-      - Arn:
-          Ref: SNSTopic
-        Id: SNSTopic
+        - Arn: !GetAtt LambdaFunction.Arn
+          Id: "RunLambdaFunction"
 
   #Here we configure which AWS services can publish to the SNS Topic
   SNSTopicPolicy:
-    Type: 'AWS::SNS::TopicPolicy'
+    Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:
         Version: 2012-10-17
@@ -88,20 +86,20 @@ Resources:
             Resource: !Ref SNSTopic
             Condition:
               ArnLike:
-                'aws:SourceArn': !GetAtt RootUserLoginEventRule.Arn
+                "aws:SourceArn": !GetAtt RootUserLoginEventRule.Arn
               StringEquals:
-                'aws:SourceAccount': !Ref 'AWS::AccountId'
+                "aws:SourceAccount": !Ref "AWS::AccountId"
           - Sid: AllowBudgetsToPublish
             Effect: Allow
             Principal:
               Service: budgets.amazonaws.com
-            Action: 'sns:Publish'
+            Action: "sns:Publish"
             Resource: !Ref SNSTopic
             Condition:
               ArnLike:
-                'aws:SourceArn': !Sub 'arn:${AWS::Partition}:budgets::${AWS::AccountId}:*'
+                "aws:SourceArn": !Sub "arn:${AWS::Partition}:budgets::${AWS::AccountId}:*"
               StringEquals:
-                'aws:SourceAccount': !Ref 'AWS::AccountId'
+                "aws:SourceAccount": !Ref "AWS::AccountId"
       Topics:
         - !Ref SNSTopic
 
@@ -111,14 +109,14 @@ Resources:
     - !Ref Email
     - "SNSSubScription&{Subscriber}":
         Type: AWS::SNS::Subscription
-        Properties:         
+        Properties:
           Protocol: email
           TopicArn: !Ref SNSTopic
           Endpoint: !Ref Subscriber
 
   #This is the Budget which will send alerts to the SNS Topic
   Budget:
-    Type: 'AWS::Budgets::Budget'
+    Type: "AWS::Budgets::Budget"
     Properties:
       Budget:
         BudgetName: aws-free-tier-budget
@@ -138,40 +136,40 @@ Resources:
 
   #This lambda function written in python does all daily checks and sends alerts to the SNS Topic
   LambdaExecutionRole:
-    Type: 'AWS::IAM::Role'
+    Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
-            Action: 'sts:AssumeRole'
+            Action: "sts:AssumeRole"
       Policies:
         - PolicyName: LambdaExecutionPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
-                  - 'sns:Publish'
+                  - "sns:Publish"
                 Resource: !Ref SNSTopic
               - Effect: Allow
                 Action:
-                  - 'iam:ListAccessKeys' #Used to get IAM user access keys
-                  - 'iam:GetAccountSummary' #Used to get account access keys and MFA status
-                Resource: '*'
+                  - "iam:ListAccessKeys" #Used to get IAM user access keys
+                  - "iam:GetAccountSummary" #Used to get account access keys and MFA status
+                Resource: "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   LambdaLogGroup:
-    Type: 'AWS::Logs::LogGroup'
+    Type: "AWS::Logs::LogGroup"
     Properties:
       LogGroupName: !Sub "/aws/lambda/${LambdaFunction}"
       RetentionInDays: 30
 
   LambdaFunction:
-    Type: 'AWS::Lambda::Function'
+    Type: "AWS::Lambda::Function"
     Properties:
       Handler: index.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -184,13 +182,8 @@ Resources:
               # List to store messages
               messages = []
 
-              access_keys_message = """Root user has access keys present!
-
-              Visit this URL to learn how to solve this: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user_manage_delete-key.html"""
-
-              mfa_message = """Root user does not have MFA configured!
-
-              Visit this URL to learn how to solve this: https://docs.aws.amazon.com/IAM/latest/UserGuide/enable-virt-mfa-for-root.html"""
+              access_keys_message = """Root user has access keys present, visit this URL to learn how to solve this: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user_manage_delete-key.html"""
+              mfa_message = """Root user does not have MFA configured, visit this URL to learn how to solve this: https://docs.aws.amazon.com/IAM/latest/UserGuide/enable-virt-mfa-for-root.html"""
 
               def send_sns_message(message):
                   # Append the message to the list
@@ -211,7 +204,10 @@ Resources:
                       print('Root user does not have access keys present!')
 
               # Call the function to check root user
-              check_root()
+              if "detail-type" in event and event["detail-type"] == "Scheduled Event":
+                  check_root()
+              elif "detail-type" in event and event["detail-type"] == "AWS Console Sign In via CloudTrail":
+                  send_sns_message(f"Root user logged in to the AWS Console from {event['detail']['sourceIPAddress']}. If this was not you, reset your password immediately and enable MFA. Visit https://docs.aws.amazon.com/IAM/latest/UserGuide/root-user-best-practices.html for more information.")
 
               # If there are messages in the list, send a single message with all accumulated messages
               if messages:
@@ -234,25 +230,33 @@ Resources:
       MemorySize: 128
 
   EventRule:
-    Type: 'AWS::Events::Rule'
+    Type: "AWS::Events::Rule"
     Properties:
-      Description: 'Run the lambda function every 24 hours'
-      ScheduleExpression: 'cron(0 12 * * ? *)'
-      State: 'ENABLED'
+      Description: "Run the lambda function every 24 hours"
+      ScheduleExpression: "cron(0 12 * * ? *)"
+      State: "ENABLED"
       Targets:
         - Arn: !GetAtt LambdaFunction.Arn
-          Id: 'RunLambdaFunction'
+          Id: "RunLambdaFunction"
 
-  LambdaInvokePermission:
-    Type: 'AWS::Lambda::Permission'
+  LambdaInvokePermissionScheduledEvent:
+    Type: "AWS::Lambda::Permission"
     Properties:
-      Action: 'lambda:InvokeFunction'
+      Action: "lambda:InvokeFunction"
       FunctionName: !GetAtt LambdaFunction.Arn
-      Principal: 'events.amazonaws.com'
+      Principal: "events.amazonaws.com"
       SourceArn: !GetAtt EventRule.Arn
 
+  LambdaInvokePermissionRootLogin:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt RootUserLoginEventRule.Arn
+
   CloudTrailBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Sub "${AWS::AccountId}-cloudtrail-bucket"
       LifecycleConfiguration:
@@ -262,33 +266,33 @@ Resources:
             ExpirationInDays: 365
 
   CloudTrailBucketPolicy:
-    Type: 'AWS::S3::BucketPolicy'
+    Type: "AWS::S3::BucketPolicy"
     Properties:
       Bucket: !Ref CloudTrailBucket
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: cloudtrail.amazonaws.com
-            Action: 's3:GetBucketAcl'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${CloudTrailBucket}'
+            Action: "s3:GetBucketAcl"
+            Resource: !Sub "arn:${AWS::Partition}:s3:::${CloudTrailBucket}"
             Condition:
               StringEquals:
-                'aws:SourceArn': !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
+                "aws:SourceArn": !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
           - Effect: Allow
             Principal:
               Service: cloudtrail.amazonaws.com
-            Action: 's3:PutObject'
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${CloudTrailBucket}/*'
+            Action: "s3:PutObject"
+            Resource: !Sub "arn:${AWS::Partition}:s3:::${CloudTrailBucket}/*"
             Condition:
               StringEquals:
-                'aws:SourceArn': !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
-                's3:x-amz-acl': 'bucket-owner-full-control'
+                "aws:SourceArn": !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
+                "s3:x-amz-acl": "bucket-owner-full-control"
 
   CloudTrail:
     DependsOn: CloudTrailBucketPolicy
-    Type: 'AWS::CloudTrail::Trail'
+    Type: "AWS::CloudTrail::Trail"
     Properties:
       TrailName: CloudTrail
       IsMultiRegionTrail: true
