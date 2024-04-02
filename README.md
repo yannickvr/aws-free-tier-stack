@@ -27,13 +27,10 @@ All configuration done by this stack should easily fit in the free tier itself. 
     -  Send a notice every 24 hours if root user..
         - does not have MFA configured
         - access keys are set
-    - (MVP) Send a notice whenever the root user is used
-        - This is already in the code as Eventbridge Event and forwarded to SNS
-            - Looking into sending this to the lambda and creating a readable event
+    - Send a notice whenever the root user is used
 - CloudTrail
     - Creates a CloudTrail-trail
     - (Planned) Monitors if there are more than 1 trails in (any) region
-
 
 ## FAQ
 
