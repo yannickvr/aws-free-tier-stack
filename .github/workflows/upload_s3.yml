@@ -18,7 +18,7 @@ jobs:
       - name: Git clone the repository
         uses: actions/checkout@v4
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::008933808544:role/aws-free-tier-stack-backendrole
           role-session-name: aws-free-tier-s3-upload
