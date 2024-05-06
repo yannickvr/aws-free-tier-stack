@@ -32,6 +32,7 @@ Parameters:
     Description: "Daily Budget:"
     Default: 1
 
+#This condition checks if the stack is being deployed in us-east-1
 Conditions:
   NotInUsEast1:
     Fn::Not:
@@ -134,7 +135,7 @@ Resources:
             - SubscriptionType: SNS
               Address: !Ref SNSTopic
 
-  #This lambda function written in python does all daily checks and sends alerts to the SNS Topic
+#This is the IAM Role that the lambda function will use
   LambdaExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -162,12 +163,14 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
+#This is the log group that stores the logs of the lambda function
   LambdaLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
       LogGroupName: !Sub "/aws/lambda/${LambdaFunction}"
       RetentionInDays: 30
 
+#This is the lambda function that does all the checks and sends alerts
   LambdaFunction:
     Type: "AWS::Lambda::Function"
     Properties:
@@ -229,16 +232,18 @@ Resources:
           SNSTopic: !Ref SNSTopic
       MemorySize: 128
 
+#AWS Events, or eventbridge, is used to schedule the lambda function to run daily
   EventRule:
     Type: "AWS::Events::Rule"
     Properties:
-      Description: "Run the lambda function every 24 hours"
+      Description: "Run all checks every 24 hours."
       ScheduleExpression: "cron(0 12 * * ? *)"
       State: "ENABLED"
       Targets:
         - Arn: !GetAtt LambdaFunction.Arn
           Id: "RunLambdaFunction"
 
+#This allows the lambda function to be invoked by the scheduled event rule
   LambdaInvokePermissionScheduledEvent:
     Type: "AWS::Lambda::Permission"
     Properties:
@@ -247,6 +252,7 @@ Resources:
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt EventRule.Arn
 
+#This allows the lambda function to be invoked by the root user login event rule
   LambdaInvokePermissionRootLogin:
     Type: "AWS::Lambda::Permission"
     Properties:
@@ -255,6 +261,7 @@ Resources:
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt RootUserLoginEventRule.Arn
 
+#This is the S3 bucket that will store the CloudTrail logs
   CloudTrailBucket:
     Type: "AWS::S3::Bucket"
     Properties:
@@ -265,6 +272,7 @@ Resources:
             Status: Enabled
             ExpirationInDays: 365
 
+#This is the policy that allows CloudTrail to write logs to the S3 bucket
   CloudTrailBucketPolicy:
     Type: "AWS::S3::BucketPolicy"
     Properties:
@@ -290,6 +298,7 @@ Resources:
                 "aws:SourceArn": !Sub arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/CloudTrail
                 "s3:x-amz-acl": "bucket-owner-full-control"
 
+#This is the CloudTrail configuration
   CloudTrail:
     DependsOn: CloudTrailBucketPolicy
     Type: "AWS::CloudTrail::Trail"
